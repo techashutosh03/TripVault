@@ -1,0 +1,48 @@
+/* ============================================
+/* Responsive Breakpoints
+/* ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --sidebar-collapsed-width: 0px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    width: var(--sidebar-width);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    width: 250px;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 1rem;
+    padding-top: calc(var(--navbar-height) + 1rem);
+  }
+
+  .navbar {
+    padding: 0 1rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chat-bubble {
+    max-width: 90%;
+  }
+
+  .landing-title {
+    font-size: 2.2rem;
+  }
+
+  .landing-cta {
+    flex-direction: column;
+    width: 100%;
+    max-width: 280px;
+  }
+}
