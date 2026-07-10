@@ -42,9 +42,28 @@ const tripSchema = new mongoose.Schema(
       trim: true,
     },
 
+    description: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+
     coverImage: {
       type: String,
       default: "",
+    },
+
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
 
     createdBy: {
@@ -57,6 +76,15 @@ const tripSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+tripSchema.pre("validate", function (next) {
+  if (this.createdBy && !this.user) {
+    this.user = this.createdBy;
+  } else if (this.user && !this.createdBy) {
+    this.createdBy = this.user;
+  }
+  next();
+});
 
 const Trip = mongoose.model("Trip", tripSchema);
 
