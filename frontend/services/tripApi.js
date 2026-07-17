@@ -82,3 +82,22 @@ export const generateAIPlan = (prompt) => API.post("/ai/plan", { prompt });
 // PDF Export Link
 // ============================================
 export const getPDFDownloadUrl = (tripId) => `/api/pdf/trip/${tripId}`;
+
+// ============================================
+// Cloudinary Photo Uploads API
+// ============================================
+export const uploadTripPhoto = (id, formData) => API.post(`/trips/${id}/upload`, formData, {
+  headers: {
+    "Content-Type": "multipart/form-data",
+  },
+});
+
+// ============================================
+// Public User Profile API
+// ============================================
+export const getPublicProfile = (username) => API.get(`/users/${username}/profile`);
+
+// ============================================
+// Update User Profile API (Authenticated)
+// ============================================
+export const updateProfile = (data) => API.put("/users/profile", data);

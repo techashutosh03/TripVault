@@ -24,6 +24,8 @@ import mapsRoutes from "./routes/maps.js";
 import currencyRoutes from "./routes/currency.js";
 import aiRoutes from "./routes/ai.js";
 import pdfRoutes from "./routes/pdf.js";
+import userRoutes from "./routes/user.js";
+import User from "./models/User.js";
 
 // ============================================
 // Middleware
@@ -112,13 +114,31 @@ app.use("/api/ai", aiRoutes);
 // PDF Export
 app.use("/api/pdf", pdfRoutes);
 
+// Users Profile Routes
+app.use("/api/users", userRoutes);
+
 // Protected Profile Route
-app.get("/api/profile", authMiddleware, (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Protected Route Accessed Successfully",
-    user: req.user,
-  });
+app.get("/api/profile", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: "Protected Route Accessed Successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error in /api/profile:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
 });
 
 // ============================================

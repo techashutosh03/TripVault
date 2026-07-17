@@ -34,3 +34,24 @@
   --error: #e74c3c;
   --pending: #f39c12;
 }
+
+:root[data-theme="light"] {
+  /* Color Palette (Light theme) */
+  --bg-primary: #f5f5f7;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #eaeaea;
+
+  --gold-primary: #b89326;
+  --gold-hover: #9c7b1f;
+  --gold-glow: rgba(184, 147, 38, 0.15);
+  --gold-border: rgba(184, 147, 38, 0.25);
+
+  --text-primary: #1c1c1e;
+  --text-secondary: #5c5c5e;
+  --text-muted: #8e8e93;
+
+  /* Glassmorphism settings (Light theme) */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-bg-hover: rgba(240, 240, 240, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.08);
+}

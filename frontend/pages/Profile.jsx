@@ -50,19 +50,28 @@ const Profile = () => {
             </p>
 
             <div style={{ width: "100%", borderTop: "1px solid var(--glass-border)", paddingTop: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              <div style={{ display: "flex", justifyContent: "between", fontSize: "0.85rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Username</span>
+                <span style={{ fontWeight: "700", color: "var(--gold-primary)" }}>@{user.username || "not_set"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Vault Privilege</span>
                 <span style={{ fontWeight: "700", color: "var(--gold-primary)" }}>ELITE TRAVELER</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "between", fontSize: "0.85rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Account Status</span>
                 <span style={{ fontWeight: "700", color: "var(--success)" }}>ACTIVE</span>
               </div>
             </div>
 
-            <Button onClick={handleLogout} variant="outline" style={{ marginTop: "2.5rem", width: "100%", justifyContent: "center", color: "var(--error)", borderColor: "rgba(231, 76, 60, 0.3)" }}>
-              <LogOut size={16} /> Disconnect Session
-            </Button>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "2.5rem" }}>
+              <Button onClick={() => navigate("/profile/edit")} variant="outline" style={{ width: "100%", justifyContent: "center" }}>
+                Edit Profile Details
+              </Button>
+              <Button onClick={handleLogout} variant="outline" style={{ width: "100%", justifyContent: "center", color: "var(--error)", borderColor: "rgba(231, 76, 60, 0.3)" }}>
+                <LogOut size={16} /> Disconnect Session
+              </Button>
+            </div>
           </div>
         )}
       </main>

@@ -26,6 +26,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
+    },
+
+    bio: {
+      type: String,
+      default: "",
+      trim: true,
+    },
   },
   {
     timestamps: true,

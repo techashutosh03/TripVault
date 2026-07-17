@@ -28,11 +28,24 @@ export const register = async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate unique default username from email
+    const baseUsername = email.split("@")[0].toLowerCase().replace(/[^a-z0-9_]/g, "");
+    let username = baseUsername;
+    let usernameExists = await User.findOne({ username });
+    let counter = 1;
+    while (usernameExists) {
+      username = `${baseUsername}${counter}`;
+      usernameExists = await User.findOne({ username });
+      counter++;
+    }
+
     // Create user
     const user = await User.create({
       fullName,
       email,
       password: hashedPassword,
+      username,
+      bio: "",
     });
 
     // Generate JWT
@@ -52,6 +65,8 @@ export const register = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       profileImage: user.profileImage,
+      username: user.username,
+      bio: user.bio || "",
     };
 
     res.status(201).json({
@@ -120,6 +135,8 @@ export const login = async (req, res) => {
       fullName: user.fullName,
       email: user.email,
       profileImage: user.profileImage,
+      username: user.username || "",
+      bio: user.bio || "",
     };
 
     res.status(200).json({

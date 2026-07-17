@@ -1,10 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, LogOut, Compass } from "lucide-react";
+import { Bell, LogOut, Compass, Sun, Moon } from "lucide-react";
 import API from "../services/axios.js";
 
 const Navbar = () => {
+  const [theme, setTheme] = useState(localStorage.getItem("tripvault_theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("tripvault_theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   const { user, logout } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
@@ -43,6 +54,21 @@ const Navbar = () => {
       <div className="navbar-actions">
         {user ? (
           <>
+            <button
+              onClick={toggleTheme}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                marginRight: "0.5rem"
+              }}
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <button
               onClick={() => navigate("/dashboard")}
               style={{

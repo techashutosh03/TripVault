@@ -7,12 +7,14 @@ import TripCard from "../components/TripCard.jsx";
 import { getTrips, deleteTrip } from "../services/tripApi.js";
 import { Plus, Briefcase, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const Dashboard = () => {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const fetchTrips = async () => {
     try {
@@ -68,21 +70,43 @@ const Dashboard = () => {
               Securely orchestrate and review your elite adventures.
             </p>
           </div>
-          <button 
-            onClick={() => navigate("/trips/create")} 
-            className="btn-gold"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.85rem",
-              padding: "0.6rem 1.2rem",
-              borderRadius: "8px",
-              boxShadow: "0 0 10px var(--gold-glow)"
-            }}
-          >
-            <Plus size={16} /> + Create Trip
-          </button>
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <button 
+              onClick={() => {
+                if (user && user.username) {
+                  navigate(`/profile/${user.username}`);
+                } else {
+                  navigate("/profile");
+                }
+              }} 
+              className="btn-outline"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.85rem",
+                padding: "0.6rem 1.2rem",
+                borderRadius: "8px"
+              }}
+            >
+              My Profile
+            </button>
+            <button 
+              onClick={() => navigate("/trips/create")} 
+              className="btn-gold"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                fontSize: "0.85rem",
+                padding: "0.6rem 1.2rem",
+                borderRadius: "8px",
+                boxShadow: "0 0 10px var(--gold-glow)"
+              }}
+            >
+              <Plus size={16} /> + Create Trip
+            </button>
+          </div>
         </div>
 
         {error && (

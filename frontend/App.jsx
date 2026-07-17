@@ -18,6 +18,9 @@ import Maps from "./pages/Maps.jsx";
 import Currency from "./pages/Currency.jsx";
 import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
+import PublicProfile from "./pages/PublicProfile.jsx";
+import EditProfile from "./pages/EditProfile.jsx";
+import Analytics from "./pages/Analytics.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 function App() {
@@ -30,6 +33,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profile/:username" element={<PublicProfile />} />
 
           {/* Protected Vault Routes */}
           <Route element={<ProtectedRoute />}>
@@ -43,6 +47,8 @@ function App() {
             <Route path="/maps" element={<Maps />} />
             <Route path="/currency" element={<Currency />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
 

@@ -8,7 +8,8 @@ import {
   Sparkles, 
   User, 
   Briefcase, 
-  Settings 
+  Settings,
+  BarChart3
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -20,6 +21,7 @@ const Sidebar = () => {
     { name: "Explore Maps", path: "/maps", icon: Map },
     { name: "Currency Exchange", path: "/currency", icon: Coins },
     { name: "Profile", path: "/profile", icon: User },
+    { name: "Analytics", path: "/analytics", icon: BarChart3 },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 

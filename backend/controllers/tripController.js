@@ -198,3 +198,60 @@ export const deleteTrip = async (req, res) => {
     });
   }
 };
+
+// ============================================
+// Upload Trip Photo
+// ============================================
+export const uploadTripPhoto = async (req, res) => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+
+    if (!trip) {
+      return res.status(404).json({
+        success: false,
+        message: "Trip not found",
+      });
+    }
+
+    // Verify ownership
+    if (trip.user.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file provided",
+      });
+    }
+
+    const imageUrl = req.file.path;
+
+    // Append to photos array
+    trip.photos.push(imageUrl);
+
+    // If first uploaded image, set it as coverImage
+    if (!trip.coverImage) {
+      trip.coverImage = imageUrl;
+    }
+
+    await trip.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Image uploaded successfully",
+      coverImage: trip.coverImage,
+      photos: trip.photos,
+      trip,
+    });
+  } catch (error) {
+    console.error("Error in uploadTripPhoto:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error during photo upload",
+    });
+  }
+};

@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import Input from "../components/Input.jsx";
 import Button from "../components/Button.jsx";
-import { createTrip } from "../services/tripApi.js";
+import { createTrip, uploadTripPhoto } from "../services/tripApi.js";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, AlertCircle, Star } from "lucide-react";
 
@@ -17,13 +17,60 @@ const CreateTrip = () => {
   const [description, setDescription] = useState("");
   const [rating, setRating] = useState(5);
   
-  // Backward compatibility fields
+  // Backward compatibility & upload fields
   const [budget, setBudget] = useState("");
   const [travelers, setTravelers] = useState("1");
-  const [coverImage, setCoverImage] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [dragging, setDragging] = useState(false);
   
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Only image files are allowed");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("File size must be less than 5MB");
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setError("");
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Only image files are allowed");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("File size must be less than 5MB");
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+      setError("");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,11 +92,16 @@ const CreateTrip = () => {
         rating: Number(rating) || 5,
         budget: Number(budget) || 0,
         travelers: Number(travelers) || 1,
-        notes: description, // Match notes to description for compatibility
-        coverImage,
+        notes: description,
       });
 
       if (res.data.success) {
+        const newTrip = res.data.trip;
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append("image", selectedFile);
+          await uploadTripPhoto(newTrip._id, formData);
+        }
         navigate("/dashboard");
       }
     } catch (err) {
@@ -201,13 +253,53 @@ const CreateTrip = () => {
               />
             </div>
 
-            <Input
-              label="Cover Image URL (Optional)"
-              id="coverImage"
-              value={coverImage}
-              onChange={(e) => setCoverImage(e.target.value)}
-              placeholder="https://images.unsplash.com/photo-xxx..."
-            />
+            <div className="form-group" style={{ marginBottom: "1.5rem" }}>
+              <label className="form-label" style={{ display: "block", marginBottom: "0.5rem" }}>Trip Cover Image</label>
+              
+              {previewUrl && (
+                <div style={{ position: "relative", width: "100%", height: "200px", borderRadius: "8px", overflow: "hidden", marginBottom: "1rem", border: "1px solid var(--gold-border)" }}>
+                  <img src={previewUrl} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedFile(null); setPreviewUrl(""); }}
+                    style={{
+                      position: "absolute", top: "10px", right: "10px",
+                      background: "rgba(0,0,0,0.7)", border: "none", color: "#fff",
+                      borderRadius: "50%", width: "30px", height: "30px",
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      fontWeight: "bold", fontSize: "14px"
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+              )}
+
+              <div 
+                className={`upload-dropzone ${dragging ? "dragging" : ""}`}
+                onClick={() => document.getElementById("coverFileInput").click()} 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                style={{ 
+                  padding: "1.5rem", 
+                  marginBottom: "0",
+                  borderColor: dragging ? "var(--gold-primary)" : "var(--gold-border)",
+                  backgroundColor: dragging ? "rgba(212, 175, 55, 0.05)" : "transparent"
+                }}
+              >
+                <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+                  {selectedFile ? `Selected: ${selectedFile.name}` : "Drag & drop or click to upload cover image"}
+                </p>
+                <input
+                  id="coverFileInput"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleFileChange}
+                />
+              </div>
+            </div>
 
             <div style={{ display: "flex", justifyContent: "end", gap: "1rem", marginTop: "1.5rem" }}>
               <Button variant="outline" onClick={() => navigate(-1)}>
