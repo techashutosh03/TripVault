@@ -5,10 +5,12 @@ import Footer from "../components/Footer.jsx";
 import TripCard from "../components/TripCard.jsx";
 import SearchBar from "../components/SearchBar.jsx";
 import Loader from "../components/Loader.jsx";
+import Skeleton from "../components/Skeleton.jsx";
 import EmptyState from "../components/EmptyState.jsx";
-import { getTrips } from "../services/tripApi.js";
+import { getTrips, deleteTrip } from "../services/tripApi.js";
 import { Briefcase, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const MyTrips = () => {
   const [trips, setTrips] = useState([]);
@@ -16,21 +18,36 @@ const MyTrips = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTrips = async () => {
-      try {
-        const res = await getTrips();
-        if (res.data.success) {
-          setTrips(res.data.trips);
-        }
-      } catch (err) {
-        console.error("Failed to load trips", err);
-      } finally {
-        setLoading(false);
+  const fetchTrips = async () => {
+    try {
+      const res = await getTrips();
+      if (res.data.success) {
+        setTrips(res.data.trips);
       }
-    };
+    } catch (err) {
+      console.error("Failed to load trips", err);
+      toast.error("Failed to load trips from the vault.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTrips();
   }, []);
+
+  const handleDeleteTrip = async (id) => {
+    try {
+      const res = await deleteTrip(id);
+      if (res.data.success) {
+        toast.success("Trip deleted successfully.");
+        fetchTrips();
+      }
+    } catch (err) {
+      console.error("Failed to delete trip:", err);
+      toast.error(err.response?.data?.message || "Failed to delete the trip.");
+    }
+  };
 
   const filteredTrips = trips.filter(
     (trip) =>
@@ -73,15 +90,17 @@ const MyTrips = () => {
         </div>
 
         {loading ? (
-          <Loader />
+          <div className="trips-list-grid">
+            <Skeleton type="card" count={3} />
+          </div>
         ) : filteredTrips.length === 0 ? (
           <EmptyState
             icon={Briefcase}
-            title={searchTerm ? "No Matches Found" : "No Trips Found"}
+            title={searchTerm ? "No Matches Found" : "You haven't added any trips yet."}
             message={
               searchTerm
                 ? "Refine your query terms to discover matches in the vault."
-                : "Create your first trip to build checklists, logs, and document stores."
+                : "Start your first adventure!"
             }
             actionText={searchTerm ? "" : "Plan Trip Manually"}
             onAction={searchTerm ? null : () => navigate("/trips/create")}
@@ -89,7 +108,11 @@ const MyTrips = () => {
         ) : (
           <div className="trips-list-grid">
             {filteredTrips.map((trip) => (
-              <TripCard key={trip._id} trip={trip} />
+              <TripCard 
+                key={trip._id} 
+                trip={trip} 
+                onDelete={handleDeleteTrip}
+              />
             ))}
           </div>
         )}

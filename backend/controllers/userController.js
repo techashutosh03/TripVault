@@ -35,12 +35,15 @@ export const getPublicProfile = async (req, res) => {
       bio: user.bio || "",
       profileImage: user.profileImage || "", // Provided for profile widget/avatar
       trips: trips.map((trip) => ({
+        _id: trip._id,
         title: trip.title,
         destination: trip.destination,
         startDate: trip.startDate,
         endDate: trip.endDate,
         rating: trip.rating,
         coverImage: trip.coverImage,
+        likes: trip.likes || [],
+        comments: trip.comments || [],
       })),
     };
 

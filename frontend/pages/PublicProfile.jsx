@@ -5,13 +5,71 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import Loader from "../components/Loader.jsx";
 import { getPublicProfile } from "../services/tripApi.js";
-import { Calendar, MapPin, Star, User } from "lucide-react";
+import { Calendar, MapPin, Star, User, Heart, MessageSquare, Send } from "lucide-react";
+import API from "../services/axios.js";
+import { toast } from "react-toastify";
 
 const PublicProfile = () => {
   const { username } = useParams();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [commentText, setCommentText] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+
+  const handleLikeTrip = async (tripId) => {
+    try {
+      const res = await API.post(`/trips/${tripId}/like`);
+      if (res.data.success) {
+        toast.success(res.data.message);
+        // Update local state
+        setProfile(prev => ({
+          ...prev,
+          trips: prev.trips.map(trip => {
+            if (trip._id === tripId) {
+              return { ...trip, likes: res.data.likes };
+            }
+            return trip;
+          })
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Please login to like this trip.");
+    }
+  };
+
+  const handleAddComment = async (e, tripId) => {
+    e.preventDefault();
+    const text = commentText[tripId];
+    if (!text || !text.trim()) return;
+
+    try {
+      const res = await API.post(`/trips/${tripId}/comment`, { text });
+      if (res.data.success) {
+        toast.success("Comment posted successfully!");
+        setCommentText(prev => ({ ...prev, [tripId]: "" }));
+        // Update local state
+        setProfile(prev => ({
+          ...prev,
+          trips: prev.trips.map(trip => {
+            if (trip._id === tripId) {
+              return { ...trip, comments: res.data.comments };
+            }
+            return trip;
+          })
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.message || "Please login to post a comment.");
+    }
+  };
+
+  const toggleCommentsExpand = (tripId) => {
+    setExpandedComments(prev => ({ ...prev, [tripId]: !prev[tripId] }));
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -168,10 +226,12 @@ const PublicProfile = () => {
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "start",
-                      height: "300px",
+                      minHeight: "380px",
+                      height: "auto",
                       padding: "0",
                       overflow: "hidden",
                       border: "1px solid var(--gold-border)",
+                      borderRadius: "16px",
                       transition: "all var(--transition-normal)",
                       position: "relative"
                     }}
@@ -250,6 +310,77 @@ const PublicProfile = () => {
                       <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "0.6rem", marginTop: "0.5rem" }}>
                         {renderStars(trip.rating)}
                       </div>
+
+                      {/* Likes and Comments Counters & Action buttons */}
+                      <div style={{ display: "flex", gap: "1rem", alignItems: "center", borderTop: "1px solid var(--glass-border)", paddingTop: "0.6rem", marginTop: "0.5rem", paddingBottom: "0.5rem", paddingLeft: "1.25rem", paddingRight: "1.25rem" }}>
+                        <button 
+                          onClick={() => handleLikeTrip(trip._id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.3rem",
+                            fontSize: "0.8rem",
+                            padding: "0"
+                          }}
+                        >
+                          <Heart size={14} style={{ color: "var(--error)", fill: (trip.likes || []).length > 0 ? "var(--error)" : "none" }} />
+                          <span>{(trip.likes || []).length} Likes</span>
+                        </button>
+
+                        <button 
+                          onClick={() => toggleCommentsExpand(trip._id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.3rem",
+                            fontSize: "0.8rem",
+                            padding: "0"
+                          }}
+                        >
+                          <MessageSquare size={14} style={{ color: "var(--gold-primary)" }} />
+                          <span>{(trip.comments || []).length} Comments</span>
+                        </button>
+                      </div>
+
+                      {/* Expanded Comments List & Form */}
+                      {expandedComments[trip._id] && (
+                        <div style={{ borderTop: "1px solid var(--glass-border)", padding: "0.75rem 1.25rem 1.25rem 1.25rem", background: "rgba(255,255,255,0.01)" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", maxHeight: "150px", overflowY: "auto", marginBottom: "0.75rem", textAlign: "left" }}>
+                            {(trip.comments || []).length === 0 ? (
+                              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontStyle: "italic" }}>No comments yet.</p>
+                            ) : (
+                              trip.comments.map((c, i) => (
+                                <div key={i} style={{ fontSize: "0.75rem", borderBottom: "1px solid rgba(255,255,255,0.02)", paddingBottom: "0.25rem" }}>
+                                  <strong style={{ color: "var(--gold-primary)" }}>@{c.username}: </strong>
+                                  <span style={{ color: "var(--text-primary)", textTransform: "none" }}>{c.text}</span>
+                                </div>
+                              ))
+                            )}
+                          </div>
+
+                          <form onSubmit={(e) => handleAddComment(e, trip._id)} style={{ display: "flex", gap: "0.5rem" }}>
+                            <input
+                              type="text"
+                              placeholder="Write a comment..."
+                              value={commentText[trip._id] || ""}
+                              onChange={(e) => setCommentText({ ...commentText, [trip._id]: e.target.value })}
+                              className="form-input"
+                              style={{ fontSize: "0.75rem", padding: "0.4rem 0.6rem", height: "auto" }}
+                            />
+                            <button type="submit" className="btn-gold" style={{ padding: "0.4rem", borderRadius: "8px" }}>
+                              <Send size={12} />
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

@@ -3,11 +3,13 @@ import Sidebar from "../components/Sidebar.jsx";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import Loader from "../components/Loader.jsx";
+import Skeleton from "../components/Skeleton.jsx";
 import TripCard from "../components/TripCard.jsx";
 import { getTrips, deleteTrip } from "../services/tripApi.js";
 import { Plus, Briefcase, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import { toast } from "react-toastify";
 
 const Dashboard = () => {
   const [trips, setTrips] = useState([]);
@@ -39,11 +41,14 @@ const Dashboard = () => {
     try {
       const res = await deleteTrip(id);
       if (res.data.success) {
+        toast.success("Trip deleted successfully.");
         fetchTrips();
       }
     } catch (err) {
       console.error("Failed to delete trip:", err);
-      setError(err.response?.data?.message || "Failed to delete the trip.");
+      const errMsg = err.response?.data?.message || "Failed to delete the trip.";
+      setError(errMsg);
+      toast.error(errMsg);
     }
   };
 
@@ -124,7 +129,9 @@ const Dashboard = () => {
         )}
 
         {loading ? (
-          <Loader />
+          <div className="trips-list-grid">
+            <Skeleton type="card" count={3} />
+          </div>
         ) : trips.length === 0 ? (
           /* Empty State as requested */
           <div 
@@ -154,10 +161,10 @@ const Dashboard = () => {
             </div>
             <div>
               <h3 style={{ fontSize: "1.3rem", color: "var(--text-primary)", fontWeight: "600", marginBottom: "0.5rem" }}>
-                No trips found. Create your first adventure.
+                You haven't added any trips yet.
               </h3>
-              <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", maxWidth: "450px", margin: "0 auto 1rem auto" }}>
-                Begin your premium journey by adding destination itineraries, ratings, and schedules.
+              <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", maxWidth: "450px", margin: "0 auto 1.5rem auto" }}>
+                Start your first adventure!
               </p>
             </div>
             <button 

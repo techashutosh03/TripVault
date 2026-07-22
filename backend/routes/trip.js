@@ -6,6 +6,9 @@ import {
   updateTrip,
   deleteTrip,
   uploadTripPhoto,
+  getTripQRCode,
+  toggleLikeTrip,
+  addCommentTrip,
 } from "../controllers/tripController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -30,5 +33,14 @@ router.delete("/:id", authMiddleware, deleteTrip);
 
 // Upload Trip Photo
 router.post("/:id/upload", authMiddleware, upload.single("image"), uploadTripPhoto);
+
+// Get Trip QR Code
+router.get("/:id/qrcode", authMiddleware, getTripQRCode);
+
+// Toggle Like
+router.post("/:id/like", authMiddleware, toggleLikeTrip);
+
+// Add Comment
+router.post("/:id/comment", authMiddleware, addCommentTrip);
 
 export default router;

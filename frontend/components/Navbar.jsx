@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext.jsx";
-import { Link, useNavigate } from "react-router-dom";
-import { Bell, LogOut, Compass, Sun, Moon } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Bell, LogOut, Compass, Sun, Moon, User, Briefcase, LayoutDashboard, Home as HomeIcon } from "lucide-react";
 import API from "../services/axios.js";
+import { toast } from "react-toastify";
 
 const Navbar = () => {
   const [theme, setTheme] = useState(localStorage.getItem("tripvault_theme") || "dark");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -15,10 +20,6 @@ const Navbar = () => {
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
-  const { user, logout } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNotificationCount = async () => {
@@ -35,40 +36,108 @@ const Navbar = () => {
       }
     };
     fetchNotificationCount();
-    // Poll every 30 seconds for live notifications
     const interval = setInterval(fetchNotificationCount, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
   const handleLogout = () => {
     logout();
+    toast.success("Successfully logged out from TripVault.");
     navigate("/login");
+    setMenuOpen(false);
+  };
+
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
   };
 
   return (
     <header className="navbar animate-fade">
-      <Link to="/" className="navbar-brand">
+      {/* Brand logo */}
+      <Link to="/" className="navbar-brand" onClick={() => setMenuOpen(false)}>
         TRIPVAULT
       </Link>
 
-      <div className="navbar-actions">
+      {/* Primary navigation links */}
+      <nav className={`navbar-nav ${menuOpen ? "open" : ""}`}>
+        <NavLink
+          to="/"
+          className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+          onClick={() => setMenuOpen(false)}
+        >
+          <HomeIcon size={14} /> Home
+        </NavLink>
+
         {user ? (
           <>
-            <button
-              onClick={toggleTheme}
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                marginRight: "0.5rem"
-              }}
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
             >
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+              <LayoutDashboard size={14} /> Dashboard
+            </NavLink>
+            <NavLink
+              to="/trips"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              <Briefcase size={14} /> My Trips
+            </NavLink>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              <User size={14} /> Profile
+            </NavLink>
+            <span
+              className="navbar-link mobile-only-link"
+              onClick={handleLogout}
+              style={{ cursor: "pointer", display: "none" }}
+            >
+              <LogOut size={14} /> Logout
+            </span>
+          </>
+        ) : (
+          <>
+            <NavLink
+              to="/login"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Login
+            </NavLink>
+            <NavLink
+              to="/register"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+              onClick={() => setMenuOpen(false)}
+            >
+              Register
+            </NavLink>
+          </>
+        )}
+      </nav>
+
+      {/* Action buttons (Theme, Notifications, Profile, Logout) */}
+      <div className="navbar-actions">
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center"
+          }}
+          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
+        {user && (
+          <>
             <button
               onClick={() => navigate("/dashboard")}
               style={{
@@ -106,7 +175,7 @@ const Navbar = () => {
                 alt="Profile"
                 className="profile-img"
               />
-              <span style={{ fontSize: "0.85rem", fontWeight: "600" }}>{user.fullName}</span>
+              <span className="profile-name-desktop" style={{ fontSize: "0.85rem", fontWeight: "600" }}>{user.fullName}</span>
             </div>
 
             <button
@@ -120,16 +189,24 @@ const Navbar = () => {
                 alignItems: "center",
                 gap: "0.5rem"
               }}
+              className="logout-btn-desktop"
               title="Logout"
             >
               <LogOut size={18} />
             </button>
           </>
-        ) : (
-          <Link to="/login" className="btn-gold">
-            <Compass size={16} /> Get Started
-          </Link>
         )}
+
+        {/* Mobile menu toggle (hamburger) */}
+        <button
+          className={`hamburger-btn ${menuOpen ? "open" : ""}`}
+          onClick={toggleMenu}
+          aria-label="Toggle menu"
+        >
+          <span />
+          <span />
+          <span />
+        </button>
       </div>
     </header>
   );

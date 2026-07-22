@@ -7,6 +7,7 @@ import Button from "../components/Button.jsx";
 import { createTrip, uploadTripPhoto } from "../services/tripApi.js";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, AlertCircle, Star } from "lucide-react";
+import { toast } from "react-toastify";
 
 const CreateTrip = () => {
   const navigate = useNavigate();
@@ -76,8 +77,31 @@ const CreateTrip = () => {
     e.preventDefault();
     setError("");
 
+    if (!title.trim()) {
+      const msg = "Please enter a valid trip title.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!destination.trim()) {
+      const msg = "Please enter a destination.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      const msg = "Please select both start and end dates.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (new Date(startDate) > new Date(endDate)) {
-      setError("Start date cannot be after the end date");
+      const msg = "Start date cannot be after the end date.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -97,15 +121,28 @@ const CreateTrip = () => {
 
       if (res.data.success) {
         const newTrip = res.data.trip;
+        toast.success("Adventure created in your TripVault!");
+        
         if (selectedFile) {
-          const formData = new FormData();
-          formData.append("image", selectedFile);
-          await uploadTripPhoto(newTrip._id, formData);
+          try {
+            toast.info("Uploading cover photo to vault...");
+            const formData = new FormData();
+            formData.append("image", selectedFile);
+            const photoRes = await uploadTripPhoto(newTrip._id, formData);
+            if (photoRes.data.success) {
+              toast.success("Cover image vaulted successfully!");
+            }
+          } catch (uploadErr) {
+            console.error("Photo upload failed:", uploadErr);
+            toast.warning("Trip created, but cover image upload failed.");
+          }
         }
         navigate("/dashboard");
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create trip");
+      const errMsg = err.response?.data?.message || "Failed to create trip";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }

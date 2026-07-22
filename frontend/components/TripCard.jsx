@@ -65,10 +65,11 @@ const TripCard = ({ trip, onDelete }) => {
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        height: "360px",
+        height: "380px",
         padding: "0",
         overflow: "hidden",
         border: "1px solid var(--gold-border)",
+        borderRadius: "16px",
         transition: "all var(--transition-normal)",
         position: "relative"
       }}
@@ -119,6 +120,7 @@ const TripCard = ({ trip, onDelete }) => {
         <img
           src={coverImage}
           alt={trip.destination}
+          loading="lazy"
           style={{
             width: "100%",
             height: "100%",

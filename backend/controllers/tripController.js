@@ -1,4 +1,6 @@
 import Trip from "../models/Trip.js";
+import User from "../models/User.js";
+import QRCode from "qrcode";
 
 // ============================================
 // Create Trip
@@ -253,5 +255,114 @@ export const uploadTripPhoto = async (req, res) => {
       success: false,
       message: error.message || "Server Error during photo upload",
     });
+  }
+};
+
+// ============================================
+// QR Code Generator Controller
+// ============================================
+export const getTripQRCode = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ success: false, message: "Trip not found" });
+    }
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5180";
+    const shareUrl = `${frontendUrl}/trips/${id}`;
+    
+    // Generate QR Code data URL
+    const qrDataUrl = await QRCode.toDataURL(shareUrl, {
+      color: {
+        dark: "#d4af37", // Gold
+        light: "#0d0d0d"  // Dark charcoal background
+      },
+      width: 250,
+      margin: 2
+    });
+
+    res.status(200).json({
+      success: true,
+      qrCode: qrDataUrl,
+      shareUrl
+    });
+  } catch (error) {
+    console.error("QR Code Generation Error:", error);
+    res.status(500).json({ success: false, message: "Failed to generate QR Code" });
+  }
+};
+
+// ============================================
+// Toggle Like on Trip
+// ============================================
+export const toggleLikeTrip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ success: false, message: "Trip not found" });
+    }
+
+    const likeIndex = trip.likes.indexOf(userId);
+    if (likeIndex > -1) {
+      // Unlike
+      trip.likes.splice(likeIndex, 1);
+    } else {
+      // Like
+      trip.likes.push(userId);
+    }
+
+    await trip.save();
+    res.status(200).json({
+      success: true,
+      message: likeIndex > -1 ? "Trip unliked" : "Trip liked",
+      likes: trip.likes
+    });
+  } catch (error) {
+    console.error("Like toggle error:", error);
+    res.status(500).json({ success: false, message: "Server Error during like toggle" });
+  }
+};
+
+// ============================================
+// Add Comment on Trip
+// ============================================
+export const addCommentTrip = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { text } = req.body;
+    const userId = req.user.id;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ success: false, message: "Comment text cannot be empty" });
+    }
+
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      return res.status(404).json({ success: false, message: "Trip not found" });
+    }
+
+    const user = await User.findById(userId);
+
+    const comment = {
+      user: userId,
+      username: user.username || user.fullName,
+      text: text.trim(),
+      createdAt: new Date()
+    };
+
+    trip.comments.push(comment);
+    await trip.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      comments: trip.comments
+    });
+  } catch (error) {
+    console.error("Add comment error:", error);
+    res.status(500).json({ success: false, message: "Server Error during comment addition" });
   }
 };

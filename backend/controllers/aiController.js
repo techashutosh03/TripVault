@@ -364,3 +364,55 @@ Ensure to pack warm thermal layers, adapters for Swiss type J outlets, and water
     ],
   };
 };
+
+// ============================================
+// AI Summary Generator Controller
+// ============================================
+export const getTripAISummary = async (req, res) => {
+  try {
+    const { tripId } = req.params;
+    const trip = await Trip.findById(tripId);
+    if (!trip) {
+      return res.status(404).json({ success: false, message: "Trip not found" });
+    }
+
+    const itineraries = await Itinerary.find({ tripId });
+    const expenses = await Expense.find({ tripId });
+
+    const totalActivities = itineraries.reduce((sum, day) => sum + (day.activities ? day.activities.length : 0), 0);
+    const totalSpent = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    let summaryText = "";
+
+    if (!apiKey) {
+      summaryText = `This is a premium travel plan to ${trip.destination}. It spans from ${new Date(trip.startDate).toLocaleDateString()} to ${new Date(trip.endDate).toLocaleDateString()}, hosting ${trip.travelers} traveler(s). You have logged ${totalActivities} activities and spent ₹${totalSpent} out of your ₹${trip.budget} budget.`;
+    } else {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `
+      Write a highly professional, engaging, 3-sentence summary of this trip suited for a recruiter dashboard:
+      Destination: ${trip.destination}
+      Title: ${trip.title}
+      Duration: ${new Date(trip.startDate).toLocaleDateString()} to ${new Date(trip.endDate).toLocaleDateString()}
+      Travelers: ${trip.travelers}
+      Budget: ${trip.budget}
+      Logged Expenses: Total spent is ${totalSpent}
+      Total Activities Logged: ${totalActivities}
+      Notes/Details: ${trip.notes || ""}
+      
+      Maintain a premium, travel-enthusiast tone. Do not include markdown blocks or label headers (like "Summary:"). Just write the paragraphs.
+      `;
+      const response = await model.generateContent(prompt);
+      summaryText = response.response.text().trim();
+    }
+
+    res.status(200).json({
+      success: true,
+      summary: summaryText
+    });
+  } catch (error) {
+    console.error("AI Summary Error:", error);
+    res.status(500).json({ success: false, message: "Failed to generate AI summary" });
+  }
+};

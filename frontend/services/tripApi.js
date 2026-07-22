@@ -81,7 +81,10 @@ export const generateAIPlan = (prompt) => API.post("/ai/plan", { prompt });
 // ============================================
 // PDF Export Link
 // ============================================
-export const getPDFDownloadUrl = (tripId) => `/api/pdf/trip/${tripId}`;
+export const getPDFDownloadUrl = (tripId) => {
+  const baseURL = import.meta.env.VITE_API_URL || "";
+  return `${baseURL}/api/pdf/trip/${tripId}`;
+};
 
 // ============================================
 // Cloudinary Photo Uploads API

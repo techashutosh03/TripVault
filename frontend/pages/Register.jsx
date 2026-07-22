@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { UserPlus, AlertCircle } from "lucide-react";
+import { UserPlus, AlertCircle, Loader2 } from "lucide-react";
 import Input from "../components/Input.jsx";
 import Button from "../components/Button.jsx";
+import { toast } from "react-toastify";
 
 const Register = () => {
   const { register } = useAuth();
@@ -18,8 +19,25 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const errMsg = "Please enter a valid email address.";
+      setError(errMsg);
+      toast.error(errMsg);
+      return;
+    }
+
+    if (fullName.trim().length < 2) {
+      const errMsg = "Full Name must be at least 2 characters long.";
+      setError(errMsg);
+      toast.error(errMsg);
+      return;
+    }
+
     if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
+      const errMsg = "Password must be at least 6 characters long.";
+      setError(errMsg);
+      toast.error(errMsg);
       return;
     }
 
@@ -28,9 +46,11 @@ const Register = () => {
     setSubmitting(false);
 
     if (res.success) {
+      toast.success("Welcome! Your TripVault account is established.");
       navigate("/dashboard");
     } else {
       setError(res.message);
+      toast.error(res.message || "Failed to establish account credentials.");
     }
   };
 
@@ -95,10 +115,18 @@ const Register = () => {
 
           <Button
             type="submit"
-            style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}
+            style={{ width: "100%", justifyContent: "center", marginTop: "1rem", gap: "0.5rem" }}
             disabled={submitting}
           >
-            {submitting ? "Creating..." : "Establish Account"} <UserPlus size={16} />
+            {submitting ? (
+              <>
+                Establishing Account...
+              </>
+            ) : (
+              <>
+                Establish Account <UserPlus size={16} />
+              </>
+            )}
           </Button>
         </form>
 

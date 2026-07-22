@@ -8,7 +8,9 @@ import Modal from "../components/Modal.jsx";
 import Input from "../components/Input.jsx";
 import Button from "../components/Button.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import Skeleton from "../components/Skeleton.jsx";
 import confetti from "canvas-confetti";
+import { toast } from "react-toastify";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import { 
   getTripDetails, 
@@ -45,7 +47,9 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  QrCode,
+  Sparkles
 } from "lucide-react";
 
 const TripDetails = () => {
@@ -58,6 +62,45 @@ const TripDetails = () => {
   // New premium states
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const [dragging, setDragging] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState("");
+  const [qrShareUrl, setQrShareUrl] = useState("");
+  const [loadingQr, setLoadingQr] = useState(false);
+  const [aiSummary, setAiSummary] = useState("");
+  const [generatingSummary, setGeneratingSummary] = useState(false);
+
+  const handleShareQRCode = async () => {
+    try {
+      setLoadingQr(true);
+      const res = await API.get(`/trips/${trip._id}/qrcode`);
+      if (res.data.success) {
+        setQrCodeData(res.data.qrCode);
+        setQrShareUrl(res.data.shareUrl);
+        setQrModalOpen(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate QR Code share.");
+    } finally {
+      setLoadingQr(false);
+    }
+  };
+
+  const generateAISummary = async () => {
+    try {
+      setGeneratingSummary(true);
+      const res = await API.get(`/ai/summary/${trip._id}`);
+      if (res.data.success) {
+        setAiSummary(res.data.summary);
+        toast.success("AI summary generated successfully!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate AI summary.");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -74,19 +117,21 @@ const TripDetails = () => {
     const file = e.dataTransfer.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        alert("Only image files are allowed");
+        toast.error("Only image files are allowed.");
         return;
       }
       const formData = new FormData();
       formData.append("image", file);
       try {
         setLoading(true);
+        toast.info("Uploading photo to vault...");
         const res = await uploadTripPhoto(trip._id, formData);
         if (res.data.success) {
           setTrip(res.data.trip);
+          toast.success("Cover image vaulted successfully!");
         }
       } catch (err) {
-        alert("Photo upload failed");
+        toast.error("Photo upload failed.");
       } finally {
         setLoading(false);
       }
@@ -162,9 +207,10 @@ const TripDetails = () => {
     if (window.confirm("Are you sure you want to permanently delete this trip and all its items?")) {
       try {
         await deleteTrip(id);
+        toast.success("Trip successfully deleted.");
         navigate("/trips");
       } catch (err) {
-        alert("Failed to delete trip");
+        toast.error("Failed to delete trip.");
       }
     }
   };
@@ -183,6 +229,7 @@ const TripDetails = () => {
       });
 
       if (res.data.success) {
+        toast.success("Activity added successfully.");
         // Refresh itinerary
         const itineraryRes = await getItinerary(id);
         setItineraries(itineraryRes.data.itinerary || []);
@@ -190,7 +237,7 @@ const TripDetails = () => {
         setNewActivity({ itineraryId: "", time: "09:00 AM", title: "", description: "", location: "" });
       }
     } catch (err) {
-      alert("Failed to add activity");
+      toast.error("Failed to add activity.");
     }
   };
 
@@ -198,11 +245,12 @@ const TripDetails = () => {
     if (window.confirm("Delete this activity?")) {
       try {
         await deleteItineraryActivity(itineraryId, activityId);
+        toast.success("Activity removed successfully.");
         // Refresh
         const itineraryRes = await getItinerary(id);
         setItineraries(itineraryRes.data.itinerary || []);
       } catch (err) {
-        alert("Failed to delete activity");
+        toast.error("Failed to delete activity.");
       }
     }
   };
@@ -221,12 +269,13 @@ const TripDetails = () => {
       });
 
       if (res.data.success) {
+        toast.success("Expense recorded successfully.");
         setExpenses([res.data.expense, ...expenses]);
         setIsExpenseModalOpen(false);
         setNewExpense({ title: "", amount: "", category: "Food", paymentMethod: "Cash" });
       }
     } catch (err) {
-      alert("Failed to add expense");
+      toast.error("Failed to add expense.");
     }
   };
 
@@ -234,9 +283,10 @@ const TripDetails = () => {
     if (window.confirm("Delete this expense record?")) {
       try {
         await deleteExpense(expenseId);
+        toast.success("Expense item deleted.");
         setExpenses(expenses.filter((exp) => exp._id !== expenseId));
       } catch (err) {
-        alert("Failed to delete expense");
+        toast.error("Failed to delete expense.");
       }
     }
   };
@@ -256,12 +306,13 @@ const TripDetails = () => {
       });
 
       if (res.data.success) {
+        toast.success("Packing item added.");
         setChecklist([...checklist, res.data.item]);
         setIsChecklistModalOpen(false);
         setNewChecklist({ itemName: "", category: "General", quantity: "1", priority: "Medium" });
       }
     } catch (err) {
-      alert("Failed to add packing item");
+      toast.error("Failed to add packing item.");
     }
   };
 
@@ -290,9 +341,10 @@ const TripDetails = () => {
   const handleDeleteChecklistItem = async (itemId) => {
     try {
       await deleteChecklistItem(itemId);
+      toast.success("Packing item deleted.");
       setChecklist(checklist.filter((item) => item._id !== itemId));
     } catch (err) {
-      alert("Failed to delete checklist item");
+      toast.error("Failed to delete checklist item.");
     }
   };
 
@@ -302,7 +354,7 @@ const TripDetails = () => {
   const handleUploadDocument = async (e) => {
     e.preventDefault();
     if (!docUpload.file || !docUpload.title) {
-      alert("Please select a file and enter a title");
+      toast.error("Please select a file and enter a title.");
       return;
     }
 
@@ -314,15 +366,17 @@ const TripDetails = () => {
     formData.append("file", docUpload.file);
 
     try {
+      toast.info("Uploading document to secure vault...");
       const res = await uploadDocument(formData);
       if (res.data.success) {
+        toast.success("Document vaulted successfully!");
         setDocuments([res.data.document, ...documents]);
         setDocUpload({ file: null, docType: "Passport", title: "" });
         // Clear file input manually
         document.getElementById("fileInput").value = "";
       }
     } catch (err) {
-      alert("Failed to upload document");
+      toast.error("Failed to upload document.");
     } finally {
       setUploadingDoc(false);
     }
@@ -332,9 +386,10 @@ const TripDetails = () => {
     if (window.confirm("Permanently delete this document?")) {
       try {
         await deleteDocument(docId);
+        toast.success("Document deleted successfully.");
         setDocuments(documents.filter((doc) => doc._id !== docId));
       } catch (err) {
-        alert("Failed to delete document");
+        toast.error("Failed to delete document.");
       }
     }
   };
@@ -349,7 +404,29 @@ const TripDetails = () => {
 
       <main className="main-content animate-fade">
         {loading ? (
-          <Loader />
+          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+            {/* Skeleton Banner */}
+            <Skeleton type="line" height="280px" style={{ borderRadius: "16px" }} />
+            
+            {/* Skeleton Header details */}
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <Skeleton type="line" width="40%" height="24px" />
+                <Skeleton type="line" width="20%" height="16px" />
+              </div>
+            </div>
+
+            {/* Skeleton Columns */}
+            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "2rem" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <Skeleton type="line" count={4} height="50px" style={{ borderRadius: "8px", marginBottom: "0.5rem" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                <Skeleton type="line" height="150px" style={{ borderRadius: "12px", marginBottom: "0.5rem" }} />
+                <Skeleton type="line" height="100px" style={{ borderRadius: "12px" }} />
+              </div>
+            </div>
+          </div>
         ) : !trip ? (
           <EmptyState title="Trip Not Found" message="The requested trip details could not be found." />
         ) : (
@@ -474,6 +551,9 @@ const TripDetails = () => {
                   >
                     <FileDown size={16} /> Download Itinerary PDF
                   </a>
+                  <button onClick={handleShareQRCode} className="btn-gold" disabled={loadingQr}>
+                    <QrCode size={16} /> {loadingQr ? "Generating..." : "Share QR Code"}
+                  </button>
                   <button onClick={() => navigate(`/trips/${trip._id}/edit`)} className="btn-outline">
                     <Edit size={16} /> Edit
                   </button>
@@ -914,8 +994,31 @@ const TripDetails = () => {
 
             {activeTab === "suggestions" && (
               <div className="animate-fade">
-                <h3>Hotel & Destination Recommendations</h3>
-                <div className="glass-card" style={{ marginTop: "1.5rem", whiteSpace: "pre-line" }}>
+                <div style={{ display: "flex", justifyContent: "between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
+                  <h3>Hotel & Destination Recommendations</h3>
+                  <button 
+                    onClick={generateAISummary} 
+                    className="btn-gold"
+                    style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", gap: "0.3rem" }}
+                    disabled={generatingSummary}
+                  >
+                    <Sparkles size={13} /> {generatingSummary ? "Generating..." : "AI Summarize Trip"}
+                  </button>
+                </div>
+
+                {aiSummary && (
+                  <div className="glass-card" style={{ marginTop: "1rem", marginBottom: "1.5rem", border: "1px solid var(--gold-primary)", boxShadow: "0 0 15px var(--gold-glow)" }}>
+                    <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}>
+                      <Sparkles size={20} style={{ color: "var(--gold-primary)" }} />
+                      <span style={{ fontWeight: "700", fontSize: "0.95rem" }}>Gemini AI Summary Log</span>
+                    </div>
+                    <p style={{ color: "var(--text-primary)", fontSize: "0.9rem", lineHeight: "1.8", fontStyle: "italic" }}>
+                      "{aiSummary}"
+                    </p>
+                  </div>
+                )}
+                
+                <div className="glass-card" style={{ whiteSpace: "pre-line" }}>
                   <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1rem" }}>
                     <BookOpen size={20} style={{ color: "var(--gold-primary)" }} />
                     <span style={{ fontWeight: "600", fontSize: "0.95rem" }}>Planner Advice Book</span>
@@ -954,19 +1057,21 @@ const TripDetails = () => {
                         const file = e.target.files[0];
                         if (file) {
                           if (!file.type.startsWith("image/")) {
-                            alert("Only image files are allowed");
+                            toast.error("Only image files are allowed.");
                             return;
                           }
                           const formData = new FormData();
                           formData.append("image", file);
                           try {
                             setLoading(true);
+                            toast.info("Vaulting memory photo...");
                             const res = await uploadTripPhoto(trip._id, formData);
                             if (res.data.success) {
                               setTrip(res.data.trip);
+                              toast.success("Memory photo vaulted successfully!");
                             }
                           } catch (err) {
-                            alert("Photo upload failed");
+                            toast.error("Photo upload failed.");
                           } finally {
                             setLoading(false);
                           }
@@ -1328,6 +1433,44 @@ const TripDetails = () => {
                 </div>
               </form>
             </Modal>
+
+            {qrModalOpen && (
+              <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} title="Share Trip Vault">
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "1.5rem", padding: "1rem 0" }}>
+                  <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>
+                    Scan the QR code below to access this premium travel vault details page instantly.
+                  </p>
+                  {qrCodeData && (
+                    <div style={{ backgroundColor: "#fff", padding: "1rem", borderRadius: "12px", border: "1px solid var(--gold-primary)" }}>
+                      <img src={qrCodeData} alt="Trip QR Code" style={{ width: "200px", height: "200px" }} />
+                    </div>
+                  )}
+                  <div style={{ width: "100%" }}>
+                    <span className="form-label">Vault Link</span>
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+                      <input
+                        type="text"
+                        readOnly
+                        value={qrShareUrl}
+                        className="form-input"
+                        style={{ fontSize: "0.85rem" }}
+                        onClick={(e) => e.target.select()}
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(qrShareUrl);
+                          toast.success("Link copied to clipboard!");
+                        }}
+                        className="btn-gold"
+                        style={{ fontSize: "0.85rem", padding: "0.5rem 1rem", textTransform: "none", flexShrink: 0 }}
+                      >
+                        Copy Link
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </Modal>
+            )}
           </>
         )}
       </main>

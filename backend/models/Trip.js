@@ -76,6 +76,18 @@ const tripSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    likes: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    }],
+
+    comments: [{
+      user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      username: String,
+      text: String,
+      createdAt: { type: Date, default: Date.now }
+    }]
   },
   {
     timestamps: true,

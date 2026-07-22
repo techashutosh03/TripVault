@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { LogIn, AlertCircle } from "lucide-react";
+import { LogIn, AlertCircle, Loader2 } from "lucide-react";
 import Input from "../components/Input.jsx";
 import Button from "../components/Button.jsx";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const { login } = useAuth();
@@ -16,15 +17,33 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setSubmitting(true);
 
+    // Simple Email Regex check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const errMsg = "Please enter a valid email address.";
+      setError(errMsg);
+      toast.error(errMsg);
+      return;
+    }
+
+    if (password.length < 6) {
+      const errMsg = "Security Password must be at least 6 characters long.";
+      setError(errMsg);
+      toast.error(errMsg);
+      return;
+    }
+
+    setSubmitting(true);
     const res = await login(email, password);
     setSubmitting(false);
 
     if (res.success) {
+      toast.success("Welcome back to your TripVault!");
       navigate("/dashboard");
     } else {
       setError(res.message);
+      toast.error(res.message || "Failed to establish secure session.");
     }
   };
 
@@ -79,10 +98,18 @@ const Login = () => {
 
           <Button
             type="submit"
-            style={{ width: "100%", justifyContent: "center", marginTop: "1rem" }}
+            style={{ width: "100%", justifyContent: "center", marginTop: "1rem", gap: "0.5rem" }}
             disabled={submitting}
           >
-            {submitting ? "Verifying..." : "Access Vault"} <LogIn size={16} />
+            {submitting ? (
+              <>
+                Connecting...
+              </>
+            ) : (
+              <>
+                Access Vault <LogIn size={16} />
+              </>
+            )}
           </Button>
         </form>
 

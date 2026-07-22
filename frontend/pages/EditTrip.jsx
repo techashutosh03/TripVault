@@ -8,6 +8,7 @@ import Loader from "../components/Loader.jsx";
 import { getTripDetails, updateTrip, uploadTripPhoto } from "../services/tripApi.js";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, AlertCircle, Star } from "lucide-react";
+import { toast } from "react-toastify";
 
 const EditTrip = () => {
   const { id } = useParams();
@@ -111,8 +112,31 @@ const EditTrip = () => {
     e.preventDefault();
     setError("");
 
+    if (!title.trim()) {
+      const msg = "Please enter a valid trip title.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!destination.trim()) {
+      const msg = "Please enter a destination.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!startDate || !endDate) {
+      const msg = "Please select both start and end dates.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (new Date(startDate) > new Date(endDate)) {
-      setError("Start date cannot be after the end date");
+      const msg = "Start date cannot be after the end date.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -131,15 +155,27 @@ const EditTrip = () => {
       });
 
       if (res.data.success) {
+        toast.success("Trip details updated in the vault!");
         if (selectedFile) {
-          const formData = new FormData();
-          formData.append("image", selectedFile);
-          await uploadTripPhoto(id, formData);
+          try {
+            toast.info("Vaulting new cover image...");
+            const formData = new FormData();
+            formData.append("image", selectedFile);
+            const photoRes = await uploadTripPhoto(id, formData);
+            if (photoRes.data.success) {
+              toast.success("Cover image vaulted successfully!");
+            }
+          } catch (uploadErr) {
+            console.error("Photo upload failed:", uploadErr);
+            toast.warning("Trip details saved, but cover image upload failed.");
+          }
         }
-        navigate("/dashboard");
+        navigate(`/trips/${id}`);
       }
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to update trip");
+      const errMsg = err.response?.data?.message || "Failed to update trip";
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
@@ -341,9 +377,9 @@ const EditTrip = () => {
                 <Button variant="outline" onClick={() => navigate(-1)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Saving..." : "Update Trip"} <Save size={16} />
-                </Button>
+                 <Button type="submit" disabled={submitting} style={{ gap: "0.5rem" }}>
+                   {submitting ? "Saving..." : "Update Trip"} <Save size={16} />
+                 </Button>
               </div>
             </form>
           </div>
